@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/*.nbconvert.ipynb
+
+# Project artifacts (never commit)
+data/
+outputs/
+Images/
+
+# Large reference material kept locally, not in repo (e.g. SUPIR paper PDF)
+docs/*.pdf
+
+# WSL/Windows cruft
+*Zone.Identifier
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
