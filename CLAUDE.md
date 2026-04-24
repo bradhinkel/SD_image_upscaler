@@ -206,10 +206,16 @@ Pair-build pipeline (Claude Code):
 
 **4c.** SD 1.5 run on DO H100 droplet
 - [ ] Brad provisioned DO H100 droplet ($3.39/hr). Training completed. Total spend <$20.
-- [ ] LoRA checkpoint saved to `outputs/loras/sd15_main.safetensors` and pushed to HF Hub.
+- [ ] LoRA checkpoint saved to `outputs/loras/sd15_main.safetensors` and pushed to HF Hub (public repo).
 - [ ] Training logs saved to `outputs/runs/sd15_main/`.
 - [ ] **Droplet terminated** (not stopped).
 - [ ] Post-training quick eval on test set: SD 1.5+LoRA LPIPS measured across 5× ratio.
+
+**Publishing policy (applies to 4c and 4d):**
+- LoRA weights + model card may be pushed publicly. Model card must include: Unsplash Lite + DIV2K attribution, training methodology summary (enough to reproduce), training config reference. Model card must **not** include the filtered file list or photo IDs from Unsplash.
+- Reproduction instructions in the repo README are fine and encouraged.
+- Running the LoRA in the public Phase 6 demo is fine.
+- **Re-read `~/datasets/unsplash_lite/TERMS.md` at Phase 4c** before the public push — Unsplash has updated these terms before and the "internal business purposes" clause governs this use. If terms have tightened, push privately and discuss with Brad before making public.
 
 **SDXL gate (decides whether Phase 4d runs):**
 Proceed to 4d only if **all three** hold — otherwise stop and discuss with Brad:
