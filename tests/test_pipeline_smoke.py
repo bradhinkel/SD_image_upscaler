@@ -83,3 +83,37 @@ def test_upscale_coerces_non_rgb_input_to_rgb(monkeypatch, out_image):
 
     forwarded = inner.call_args.kwargs["image"]
     assert forwarded.mode == "RGB"
+
+
+def _install_mock_stage_b(monkeypatch):
+    """Install a mock stage B that returns the input tile unchanged (identity)."""
+    mock_stage_b = MagicMock()
+
+    def identity_call(**kwargs):
+        return MagicMock(images=[kwargs["image"]])
+
+    mock_stage_b.side_effect = identity_call
+    monkeypatch.setattr(pipeline_mod, "_STAGE_B_LOADER", lambda device, dtype: mock_stage_b)
+    return mock_stage_b
+
+
+def test_upscale_two_stage_returns_target_size_and_forwards_denoise(monkeypatch, out_image):
+    _install_mock_pipeline_class(monkeypatch, out_image)
+    mock_stage_b = _install_mock_stage_b(monkeypatch)
+
+    up = UpscalerPipeline(device="cpu")
+    result = up.upscale_two_stage(
+        Image.new("RGB", (250, 250)),
+        target_size=1000,
+        denoise=0.42,
+        steps=15,
+        cn_weight=0.7,
+        prompt="a mountain",
+    )
+
+    assert result.size == (1000, 1000)
+    # At least one stage-B call was made with our params.
+    assert mock_stage_b.call_args.kwargs["strength"] == 0.42
+    assert mock_stage_b.call_args.kwargs["num_inference_steps"] == 15
+    assert mock_stage_b.call_args.kwargs["controlnet_conditioning_scale"] == 0.7
+    assert mock_stage_b.call_args.kwargs["prompt"] == "a mountain"
