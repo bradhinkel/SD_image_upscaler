@@ -19,6 +19,7 @@ dependencies = [
     "tqdm>=4.66",
     "spandrel>=0.4",
     "matplotlib>=3.8",
+    "lpips>=0.1.4",
 ]
 
 [project.optional-dependencies]

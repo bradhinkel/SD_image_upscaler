@@ -79,6 +79,16 @@ class UpscalerPipeline:
         loader = _STAGE_B_LOADER or _default_stage_b_loader
         self._stage_b = loader(self.device, self._dtype())
 
+    def set_stage_b_vae(self, vae: Any) -> None:
+        """Replace the VAE on the loaded stage-B pipeline (in-place).
+
+        Used by the Phase 2.5 VAE swap experiment. Caller is responsible for
+        the VAE being on the right device/dtype.
+        """
+        if self._stage_b is None:
+            raise RuntimeError("stage B not loaded — call load_stage_b() first")
+        self._stage_b.vae = vae
+
     def close(self) -> None:
         if self._pipe is None and self._stage_b is None:
             return

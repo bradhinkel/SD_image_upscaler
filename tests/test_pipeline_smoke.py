@@ -97,6 +97,24 @@ def _install_mock_stage_b(monkeypatch):
     return mock_stage_b
 
 
+def test_set_stage_b_vae_swaps_vae_on_loaded_pipe(monkeypatch, out_image):
+    _install_mock_pipeline_class(monkeypatch, out_image)
+    _install_mock_stage_b(monkeypatch)
+
+    up = UpscalerPipeline(device="cpu")
+    up.load_stage_b()
+
+    sentinel_vae = object()
+    up.set_stage_b_vae(sentinel_vae)
+    assert up._stage_b.vae is sentinel_vae
+
+
+def test_set_stage_b_vae_raises_if_stage_b_not_loaded(monkeypatch, out_image):
+    up = UpscalerPipeline(device="cpu")
+    with pytest.raises(RuntimeError, match="stage B not loaded"):
+        up.set_stage_b_vae(object())
+
+
 def test_upscale_two_stage_returns_target_size_and_forwards_denoise(monkeypatch, out_image):
     _install_mock_pipeline_class(monkeypatch, out_image)
     mock_stage_b = _install_mock_stage_b(monkeypatch)
