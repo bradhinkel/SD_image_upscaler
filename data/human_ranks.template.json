@@ -1,0 +1,12 @@
+{
+  "_about": "Subjective ranks per image, 1=best to 5=worst, comparing the five methods. Save as data/human_ranks.json (no .template) once filled in. Methods: bicubic, lanczos, realesrgan, x4_upscaler, two_stage.",
+  "ratio": 5,
+  "lr_size": 200,
+  "ranks": {
+    "California_Wildflowers.jpg": {"bicubic": 5, "lanczos": 4, "realesrgan": 3, "x4_upscaler": 1, "two_stage": 2},
+    "Paris_Street.jpg":           {"bicubic": 5, "lanczos": 4, "realesrgan": 1, "x4_upscaler": 2, "two_stage": 3},
+    "Duomo_fine-arch.jpg":        {"bicubic": 5, "lanczos": 4, "realesrgan": 1, "x4_upscaler": 2, "two_stage": 3},
+    "Forest_hf-texture.jpg":      {"bicubic": 5, "lanczos": 4, "realesrgan": 1, "x4_upscaler": 2, "two_stage": 3},
+    "NewYork_Street_Text.jpg":    {"bicubic": 5, "lanczos": 4, "realesrgan": 2, "x4_upscaler": 1, "two_stage": 3}
+  }
+}

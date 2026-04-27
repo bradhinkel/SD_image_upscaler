@@ -20,6 +20,8 @@ dependencies = [
     "spandrel>=0.4",
     "matplotlib>=3.8",
     "lpips>=0.1.4",
+    "piq>=0.8",
+    "pandas>=2.2",
 ]
 
 [project.optional-dependencies]
