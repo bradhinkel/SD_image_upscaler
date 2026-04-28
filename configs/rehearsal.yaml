@@ -1,0 +1,34 @@
+# Phase 4b — local LoRA rehearsal on stable-diffusion-x4-upscaler.
+# Goal: shake out the training loop / dataset / peft attachment / checkpointing
+# / sampling at the smallest scale that still exercises every code path before
+# spending RunPod $.
+
+base_model: stabilityai/stable-diffusion-x4-upscaler
+
+# LoRA — small rank for rehearsal, keeps trainable params and VRAM modest.
+# target_modules names match diffusers UNet cross-attention naming convention
+# (verified by inspecting the model in a smoke run).
+lora_rank: 8
+lora_target_modules:
+  - to_q
+  - to_k
+  - to_v
+  - to_out.0
+
+# Training
+learning_rate: 1.0e-4
+weight_decay: 0.0
+batch_size: 1
+max_steps: 1000
+max_noise_level: 100  # x4-upscaler conditions on noise level 0..350 at inference
+
+# Logging / checkpointing
+sample_every: 200          # render an LR -> HR sample from current weights
+sample_inference_steps: 20 # for those intermediate samples
+checkpoint_every: 500
+
+# Data + outputs
+pairs_dir: data/pairs
+captions_path: data/captions.jsonl
+output_dir: outputs/runs/rehearsal
+num_workers: 2
