@@ -37,8 +37,8 @@ Key decisions:
 - Base model: SD 1.5 trained first; SDXL trained only if Phase 4c passes the gate (see Phase 4c criteria). Final deployment model decided empirically in Phase 4e.
 - Backbone: `stable-diffusion-x4-upscaler` (stage A) + `ControlNet Tile` (stage B).
 - Training: one LoRA per base model (SD 1.5 mandatory, SDXL conditional), captioned training data (BLIP-2).
-- Training compute: **DO GPU droplet, H100 at $3.39/hr, provisioned by Brad for each run**. Consolidates with existing DO account.
-- Deployment: DO droplet frontend + Modal serverless GPU backend. Default Modal GPU = A10G (revisit if SDXL wins the 4e decision).
+- Training compute: **RunPod RTX 5090 32 GB at ~$0.69/hr (Community Cloud), provisioned by Brad for each run**. Same Blackwell architecture as the local 5070 laptop, so the cu128 torch wheels in `pyproject.toml` run on the pod unchanged. Dataset transfer via HuggingFace Hub (private dataset repo).
+- Deployment: DO droplet frontend (4 GB, no GPU) + Modal serverless GPU backend. Default Modal GPU = A10G (revisit if SDXL wins the 4e decision).
 - Reference benchmarks: **SUPIR + HYPIR**, both run manually by Brad through suppixel.ai. Claude Code does not attempt to run these itself — it only consumes and scores the downloaded outputs.
 
 See `docs/project_plan.md` §1 for the decision table.
@@ -198,17 +198,17 @@ Pair-build pipeline (Claude Code):
 - [ ] `data/captions.jsonl` has one caption per HR tile.
 - [ ] 20 random captions sampled and visually checked — no obvious garbage (>30% wrong → filter or upgrade VLM).
 - [ ] Dedup + test-set leakage check run. `outputs/phase4/leakage_report.md` written: lists dedup count, any near-dupes against the frozen test set with perceptual-hash distance and file pairs, and a summary (rendered for Brad review before training).
-- [ ] Dataset (pairs + captions) backed up to DO Spaces.
+- [ ] Dataset (pairs + captions) pushed to a **private** HuggingFace Hub dataset repo (`bradhinkel/sd-image-upscaler-pairs`) so the RunPod pod can pull it via `datasets.load_dataset` at training time.
 
 **4b.** Local rehearsal
 - [ ] `src/upscaler/lora_train.py` runnable: `python -m upscaler.lora_train --config configs/rehearsal.yaml`.
 - [ ] Rehearsal completes in <3 hours locally; loss decreases; intermediate samples rendered in `outputs/runs/rehearsal/`.
 
-**4c.** SD 1.5 run on DO H100 droplet
-- [ ] Brad provisioned DO H100 droplet ($3.39/hr). Training completed. Total spend <$20.
-- [ ] LoRA checkpoint saved to `outputs/loras/sd15_main.safetensors` and pushed to HF Hub (public repo).
+**4c.** SD 1.5 run on RunPod RTX 5090 pod
+- [ ] Brad provisioned RunPod RTX 5090 32 GB pod (~$0.69/hr Community Cloud). Training completed. Total spend <$10.
+- [ ] LoRA checkpoint saved to `outputs/loras/sd15_main.safetensors` and pushed to HF Hub (public repo `bradhinkel/sd-image-upscaler-sd15-lora`).
 - [ ] Training logs saved to `outputs/runs/sd15_main/`.
-- [ ] **Droplet terminated** (not stopped).
+- [ ] **RunPod pod terminated** (not stopped — terminate releases the GPU and stops billing).
 - [ ] Post-training quick eval on test set: SD 1.5+LoRA LPIPS measured across 5× ratio.
 
 **Publishing policy (applies to 4c and 4d):**
@@ -220,14 +220,14 @@ Pair-build pipeline (Claude Code):
 **SDXL gate (decides whether Phase 4d runs):**
 Proceed to 4d only if **all three** hold — otherwise stop and discuss with Brad:
 1. SD 1.5+LoRA beats Real-ESRGAN on LPIPS for ≥50% of test images at 5×.
-2. Phase 4c total spend stayed under $20.
+2. Phase 4c total spend stayed under $10.
 3. Phase 4c wall-clock training time was under 6 hours.
 
-**4d.** SDXL run on DO H100 droplet — *conditional on SDXL gate passing*
+**4d.** SDXL run on RunPod RTX 5090 pod — *conditional on SDXL gate passing*
 - [ ] Before training: small VAE A/B on 5–10 test images comparing SDXL native VAE vs Phase 2.5 winner. Winner used for 4d training + inference. A/B result logged.
-- [ ] Training completed. Total spend <$25.
-- [ ] LoRA checkpoint saved to `outputs/loras/sdxl_main.safetensors` and pushed to HF Hub.
-- [ ] **Droplet terminated** (not stopped).
+- [ ] Training completed. Total spend <$15. (SDXL on 32 GB needs gradient checkpointing + fp16 + small batch — feasible on the 5090, just tighter than 4c.)
+- [ ] LoRA checkpoint saved to `outputs/loras/sdxl_main.safetensors` and pushed to HF Hub (`bradhinkel/sd-image-upscaler-sdxl-lora`).
+- [ ] **RunPod pod terminated** (not stopped).
 
 **4e.** Evaluation
 - [ ] `outputs/eval/leaderboard_phase4.csv` includes SD 1.5+LoRA and SDXL+LoRA rows across the **full 60-image set** alongside the Phase 3 entries.
@@ -287,8 +287,8 @@ See `.env.example` for the full list. Short version of what you'll need by phase
 |---|---|
 | 0–3 | `HF_TOKEN` (for model weight downloads) |
 | 3 | none (SUPIR/HYPIR via suppixel.ai is manual; Brad downloads outputs) |
-| 4a | `HF_TOKEN`, DO Spaces creds (`DO_SPACES_*`) |
-| 4c/4d | `DO_API_TOKEN` (for GPU droplet provisioning), `DO_SPACES_*` (for dataset + checkpoint transfer) |
+| 4a | `HF_TOKEN` (write scope — used to push the dataset to a private HF Hub repo) |
+| 4c/4d | `RUNPOD_API_KEY` (pod provisioning), `HF_TOKEN` (dataset pull + LoRA push from inside the pod) |
 | 6 | `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET` + `DO_DROPLET_IP` / `DO_SSH_KEY_PATH` + optional `DEMO_DOMAIN` |
 
 ---
@@ -325,8 +325,8 @@ Full list is in `docs/project_plan.md` §9. Summary:
 
 - **Phase 1:** curating the 60-image frozen test set (30 traditional + 30 hard) and authoring `metadata.json`.
 - **Phase 3:** producing a subjective human-rank of 3–5 images for metric-vs-human correlation.
-- **Phase 4a:** spot-checking BLIP-2 captions; provisioning DO Spaces.
-- **Phase 4c / 4d:** provisioning the DO H100 GPU droplet, monitoring cost, terminating when done.
+- **Phase 4a:** spot-checking BLIP-large captions; creating the HF Hub access token (write scope).
+- **Phase 4c / 4d:** provisioning the RunPod RTX 5090 pod, monitoring cost, terminating when done.
 - **Phase 4e:** the SD 1.5 vs SDXL deployment judgment call.
 - **Phase 4.6:** selecting the 12-image SUPIR/HYPIR comparison subset from Phase 4e leaderboard data; running SUPIR + HYPIR manually through suppixel.ai and depositing outputs.
 - **Phase 5:** hands-on UX review of the Gradio app.
