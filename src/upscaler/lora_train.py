@@ -198,10 +198,18 @@ def train(config_path: Path) -> int:
             # by extreme augmentations.
             noise_level = torch.randint(0, cfg.get("max_noise_level", 100), (bsz,), device=device)
 
+            # Add LR-image noise via the low-res scheduler — at inference time
+            # the pipeline does this and passes the same `noise_level` as
+            # `class_labels` to the UNet. Skipping it during training (as the
+            # original loop did) leaves a meaningless class_labels signal and
+            # the LoRA learns to interpret it destructively at inference.
+            lr_aug_noise = torch.randn_like(lr_t)
+            lr_t_aug = pipe.low_res_scheduler.add_noise(lr_t, lr_aug_noise, noise_level)
+
             # Concat LR pixels (3 channels) with noisy latents (4 channels) at the
             # same spatial resolution — this is exactly what the upscale pipeline
             # does at inference, so the geometry already matches.
-            unet_input = torch.cat([noisy_latents, lr_t], dim=1)
+            unet_input = torch.cat([noisy_latents, lr_t_aug], dim=1)
 
             tok = tokenizer(
                 list(captions),
@@ -271,6 +279,20 @@ def train(config_path: Path) -> int:
         f"({elapsed / max(1, len(losses)):.2f} s/step). Final LoRA: {ckpt_dir / 'final'}",
         file=sys.stderr,
     )
+
+    # Post-training sanity render. Catches train/inference distribution bugs
+    # that pure loss decrease can mask (e.g., the original missing-LR-noise
+    # bug that produced VAE-artifact outputs despite a 60% loss drop).
+    print("Post-training sanity sample ...", file=sys.stderr)
+    _save_sample(
+        pipe,
+        lora_unet,
+        sample_lr_pil,
+        sample_caption,
+        samples_dir / "post_training_sanity.jpg",
+        steps=cfg.get("sample_inference_steps", 20),
+    )
+    print(f"  saved {samples_dir / 'post_training_sanity.jpg'}", file=sys.stderr)
     return 0
 
 
