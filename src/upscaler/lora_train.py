@@ -40,10 +40,23 @@ def _load_pipeline(model_id: str, device: str, dtype: torch.dtype) -> Any:
     return pipe
 
 
-def _attach_lora(unet: torch.nn.Module, rank: int, target_modules: list[str]) -> torch.nn.Module:
+def _attach_lora(
+    unet: torch.nn.Module,
+    rank: int,
+    target_modules: list[str],
+    alpha: int | None = None,
+) -> torch.nn.Module:
+    """alpha=None defaults to alpha=rank (effective LoRA scale 1.0).
+
+    Setting alpha < rank gives scale = alpha/rank < 1.0, which produces a
+    smaller LoRA delta — useful when the base model is sensitive to
+    perturbations on its denoising trajectory (true for x4-upscaler).
+    """
+    if alpha is None:
+        alpha = rank
     cfg = LoraConfig(
         r=rank,
-        lora_alpha=rank,
+        lora_alpha=alpha,
         target_modules=target_modules,
         lora_dropout=0.0,
         bias="none",
@@ -100,11 +113,14 @@ def train(config_path: Path) -> int:
     # Keep VAE in fp32 throughout — UNet stays in fp16 for memory savings.
     pipe.vae.to(torch.float32)
 
+    rank = cfg["lora_rank"]
+    alpha = cfg.get("lora_alpha", rank)
     print(
-        f"Attaching LoRA (rank={cfg['lora_rank']}, targets={cfg['lora_target_modules']}) ...",
+        f"Attaching LoRA (rank={rank}, alpha={alpha} -> scale {alpha / rank:.2f}, "
+        f"targets={cfg['lora_target_modules']}) ...",
         file=sys.stderr,
     )
-    lora_unet = _attach_lora(pipe.unet, cfg["lora_rank"], cfg["lora_target_modules"])
+    lora_unet = _attach_lora(pipe.unet, rank, cfg["lora_target_modules"], alpha=alpha)
     lora_unet.train()
 
     trainable = sum(p.numel() for p in lora_unet.parameters() if p.requires_grad)
@@ -171,6 +187,15 @@ def train(config_path: Path) -> int:
     start_time = time.time()
     pbar = tqdm(total=cfg["max_steps"], desc="train")
 
+    bicubic_lr_from_hr = cfg.get("bicubic_lr_from_hr", False)
+    if bicubic_lr_from_hr:
+        print(
+            "  bicubic_lr_from_hr=True — generating LR via bicubic-downsample of HR "
+            "on-the-fly, bypassing the cached real-ESRGAN-degraded LR. Matches the "
+            "x4-upscaler base model's training distribution more closely.",
+            file=sys.stderr,
+        )
+
     while step < cfg["max_steps"]:
         for lr_t, hr_t, captions in dl:
             if step >= cfg["max_steps"]:
@@ -178,6 +203,14 @@ def train(config_path: Path) -> int:
             lr_t = lr_t.to(device, dtype, non_blocking=True)
             hr_t = hr_t.to(device, dtype, non_blocking=True)
             bsz = hr_t.shape[0]
+
+            if bicubic_lr_from_hr:
+                # 4x bicubic downsample of HR matches the base x4-upscaler's
+                # original training-time LR distribution (no synthetic blur,
+                # noise, or JPEG augmentation).
+                lr_t = F.interpolate(
+                    hr_t, scale_factor=0.25, mode="bicubic", align_corners=False
+                ).clamp(-1.0, 1.0)
 
             # VAE runs in fp32, so cast HR up first then bring latents back to UNet dtype.
             with torch.no_grad():
