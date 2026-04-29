@@ -1,0 +1,44 @@
+# Phase 4c — stage-B SD 1.5 LoRA (domain-aesthetic adaptation).
+#
+# This is the SUPIR-informed pivot. Three failed runs targeting LoRA on
+# x4-upscaler's cross-attention taught us:
+#   - x4-upscaler's denoising trajectory is fragile; even at LoRA scale 0.25
+#     the multi-step inference path collapses.
+#   - SUPIR (the SOTA reference) doesn't LoRA cross-attention — it uses a
+#     zero-init additive adapter on intermediate residual features.
+#
+# For our 50-hour budget, the pragmatic pivot is standard SD 1.5 LoRA
+# trained as text-to-image fine-tuning. The LoRA only has to learn
+# "domain-aesthetic adaptation" — what landscape / cityscape / animal
+# textures look like — not the full restoration task. ControlNet Tile
+# (already in Phase 2's pipeline) does the heavy structural lifting.
+#
+# Standard recipe known to work for SD 1.5 LoRAs (Civitai pattern).
+
+base_model: stable-diffusion-v1-5/stable-diffusion-v1-5
+
+lora_rank: 16
+lora_alpha: 8     # scale = 0.5; conservative vs typical alpha = rank
+lora_target_modules:
+  - to_q
+  - to_k
+  - to_v
+  - to_out.0
+
+learning_rate: 1.0e-4
+weight_decay: 0.0
+batch_size: 4
+max_steps: 8000
+
+# Periodic txt2img sample lets us watch the aesthetic prior shift over training.
+sample_prompt: "a high-resolution landscape photograph at golden hour, sharp detail, plants in foreground, mountain range in distance"
+sample_every: 500
+sample_inference_steps: 25
+checkpoint_every: 1000
+
+# We reuse the Phase 4a captioned dataset as-is. Stage-B training only needs
+# the HR side; the cached LR pairs are ignored.
+pairs_dir: data/pairs
+captions_path: data/captions.jsonl
+output_dir: outputs/runs/sd15_stage_b
+num_workers: 4
