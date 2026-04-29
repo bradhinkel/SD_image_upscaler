@@ -204,35 +204,48 @@ Pair-build pipeline (Claude Code):
 - [ ] `src/upscaler/lora_train.py` runnable: `python -m upscaler.lora_train --config configs/rehearsal.yaml`.
 - [ ] Rehearsal completes in <3 hours locally; loss decreases; intermediate samples rendered in `outputs/runs/rehearsal/`.
 
-**4c.** SD 1.5 run on RunPod RTX 5090 pod
-- [ ] Brad provisioned RunPod RTX 5090 32 GB pod (~$0.69/hr Community Cloud). Training completed. Total spend <$10.
-- [ ] LoRA checkpoint saved to `outputs/loras/sd15_main.safetensors` and pushed to HF Hub (public repo `bradhinkel/sd-image-upscaler-sd15-lora`).
-- [ ] Training logs saved to `outputs/runs/sd15_main/`.
-- [ ] **RunPod pod terminated** (not stopped — terminate releases the GPU and stops billing).
-- [ ] Post-training quick eval on test set: SD 1.5+LoRA LPIPS measured across 5× ratio.
+**4c.** SD 1.5 run on RunPod RTX 5090 pod — **CLOSED with negative result**
 
-**Publishing policy (applies to 4c and 4d):**
-- LoRA weights + model card may be pushed publicly. Model card must include: Unsplash Lite + DIV2K attribution, training methodology summary (enough to reproduce), training config reference. Model card must **not** include the filtered file list or photo IDs from Unsplash.
-- Reproduction instructions in the repo README are fine and encouraged.
-- Running the LoRA in the public Phase 6 demo is fine.
-- **Re-read `~/datasets/unsplash_lite/TERMS.md` at Phase 4c** before the public push — Unsplash has updated these terms before and the "internal business purposes" clause governs this use. If terms have tightened, push privately and discuss with Brad before making public.
+The originally planned x4-upscaler LoRA was attempted three times (~$2.55 cloud) and produced catastrophically destructive deltas at any usable scale (LPIPS 0.79–0.92 vs base 0.33). Diagnostic confirmed the LoRA mechanism was loading correctly but the trained weights pushed the denoising trajectory off the natural-image manifold. Re-reading the SUPIR paper validated this as a structural issue: SUPIR explicitly avoids x4-upscaler as a base, uses zero-init additive adapters (not LoRA), and targets non-attention layers.
 
-**SDXL gate (decides whether Phase 4d runs):**
-Proceed to 4d only if **all three** hold — otherwise stop and discuss with Brad:
-1. SD 1.5+LoRA beats Real-ESRGAN on LPIPS for ≥50% of test images at 5×.
-2. Phase 4c total spend stayed under $10.
-3. Phase 4c wall-clock training time was under 6 hours.
+The pivot was a stage-B SD 1.5 LoRA targeting cross-attention (`bradhinkel/sd-image-upscaler-sd15-lora`, public, with an honest model card flagging the niche-only utility). Training was clean (no destabilisation), but the LoRA does **not** improve the two-stage pipeline on average:
 
-**4d.** SDXL run on RunPod RTX 5090 pod — *conditional on SDXL gate passing*
-- [ ] Before training: small VAE A/B on 5–10 test images comparing SDXL native VAE vs Phase 2.5 winner. Winner used for 4d training + inference. A/B result logged.
-- [ ] Training completed. Total spend <$15. (SDXL on 32 GB needs gradient checkpointing + fp16 + small batch — feasible on the 5090, just tighter than 4c.)
-- [ ] LoRA checkpoint saved to `outputs/loras/sdxl_main.safetensors` and pushed to HF Hub (`bradhinkel/sd-image-upscaler-sdxl-lora`).
-- [ ] **RunPod pod terminated** (not stopped).
+| Pipeline | Mean LPIPS at 5× |
+|---|---|
+| Real-ESRGAN | 0.299 |
+| Two-stage (no LoRA) | 0.433 |
+| Two-stage + stage-B LoRA | 0.443 |
 
-**4e.** Evaluation
-- [ ] `outputs/eval/leaderboard_phase4.csv` includes SD 1.5+LoRA and SDXL+LoRA rows across the **full 60-image set** alongside the Phase 3 entries.
-- [ ] `notebooks/05_lora_results.ipynb` shows before/after grids per test image plus a per-image win/loss/surprise classification (used by Phase 4.6's subset selection).
-- [ ] A written one-paragraph decision in that notebook on which LoRA goes into deployment.
+Per-category, the LoRA helps night scenes (62.5% win rate, mean −0.006 LPIPS) and is roughly neutral on reflections; it mildly regresses everywhere else.
+
+Total Phase 4c cloud spend: **$3.40** across all 4 training attempts (well under the $10 cap).
+Total Phase 4c wall-clock: ~5.5 hrs (well under 6 hrs).
+
+Acceptance for closure:
+- [x] At least one LoRA training run completed successfully (the stage-B run).
+- [x] LoRA checkpoint saved to `outputs/loras/sd15_stage_b/` and pushed to HF Hub at `bradhinkel/sd-image-upscaler-sd15-lora`.
+- [x] Training logs saved to `outputs/runs/sd15_stage_b/`.
+- [x] **RunPod pod terminated** by Brad after eval completed.
+- [x] Post-training quick eval on full test set at 5× completed (`scripts/eval_lora_stage_b.py` → `outputs/eval/lora_stage_b_gate.csv`).
+- [x] Negative-result writeup material captured for Phase 7.
+
+**Publishing policy (applied):**
+- LoRA + honest model card pushed publicly. Card includes the unflattering numbers, the night-scene niche, and a "read this before using" note pointing to the project repo.
+- Unsplash Lite TERMS.md re-checked at training time; ML training is permitted under the Lite Dataset terms.
+
+**SDXL gate decision (was: proceed to 4d if ≥50% LPIPS win over Real-ESRGAN + <$10 + <6 hrs):**
+
+Gate **FAILED** on criterion 1: stage-B + LoRA beat Real-ESRGAN on **3.3% (2/60)** of test images. Two readings of the failure:
+1. Cross-attention LoRA is the wrong adapter type for restoration (SUPIR's lesson).
+2. Two-stage diffusion isn't the right tool when LR is clean bicubic — Real-ESRGAN's SR-specific GAN already extracts what's there.
+
+**4d.** SDXL run on RunPod — **SKIPPED**
+
+The SDXL gate failure means a larger SDXL LoRA run would compound the same architectural mismatch on a more expensive base. The marginal cloud spend (~$10) and wall-clock (~10 hrs) is better invested in Phase 4.6's head-to-head and Phase 7's writeup. The Phase 7 follow-on roadmap describes the SDXL-base path as Tier 2 of a possible next project.
+
+**4e.** Evaluation — **subsumed into Phase 4c closure + Phase 4.6.**
+
+Originally Phase 4e was to merge SD 1.5+LoRA and SDXL+LoRA leaderboard rows into `outputs/eval/leaderboard_phase4.csv` and pick a winner. With 4d skipped, the relevant comparisons are already in `outputs/eval/lora_stage_b_gate.csv` (no-LoRA two-stage vs LoRA two-stage vs Real-ESRGAN, full 60-image set). Phase 4.6 will merge SUPIR + HYPIR rows into a single final leaderboard.
 
 ### Phase 4.5 — Prompting ladder
 - [ ] `notebooks/04_prompt_ladder.ipynb` runs all six prompt levels × full test set.

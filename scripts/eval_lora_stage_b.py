@@ -69,8 +69,10 @@ def main() -> int:
 
     up._stage_b.unet = PeftModel.from_pretrained(up._stage_b.unet, str(args.lora))
     up._stage_b.unet.eval()
-    # Stage B's VAE in fp32 for safety (matches training fix).
-    up._stage_b.vae.to(torch.float32)
+    # Keep VAE in pipeline's native fp16 — at inference the latent distribution
+    # is well-conditioned (vs training where SD 1.5 VAE in fp16 occasionally
+    # NaNs on natural-image encoding). Casting to fp32 here trips the pipeline's
+    # internal latent->VAE decode, which doesn't auto-upcast for SD 1.5.
 
     ts = testset.load(REPO_ROOT / "data" / "test_images")
     print(f"Test set: {len(ts)} images at {args.target // args.lr_size}x", file=sys.stderr)
