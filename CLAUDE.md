@@ -253,15 +253,18 @@ Originally Phase 4e was to merge SD 1.5+LoRA and SDXL+LoRA leaderboard rows into
 - [ ] Hero "same LR, five wildly different prompts" demo rendered for ≥2 images.
 - [ ] Notebook ends with a markdown summary: "prompting matters a lot / a little / varies by domain because…"
 
-### Phase 4.6 — SUPIR / HYPIR benchmark
-Data-driven comparison: subset selection informed by Phase 4e's win/loss/surprise classification, not category quotas. Brad runs SUPIR + HYPIR manually through suppixel.ai.
+### Phase 4.6 — SUPIR / HYPIR benchmark (4× only)
 
-- [ ] `outputs/supir/subset.json` documents 12 selected images with a per-image rationale (clear win / clear loss / surprise / coverage).
-- [ ] **Brad has run** SUPIR + HYPIR through suppixel.ai: 12 images × 3 ratios × 2 models = 72 renders. Outputs in `outputs/supir/` and `outputs/hypir/` with consistent naming.
-- [ ] Credits / $ spent on suppixel.ai recorded.
-- [ ] `outputs/eval/leaderboard_phase4_6.csv` merges the 12-image SUPIR + HYPIR subset rows with the full-set Phase 4 leaderboard.
-- [ ] A head-to-head notebook renders 12 side-by-side grids (our winning LoRA vs. SUPIR vs. HYPIR) × 3 ratios.
-- [ ] Notebook ends with a markdown summary: where we're competitive, where the SOTA gap is largest, and one hypothesis per clear-loss image.
+Data-driven comparison: subset selection informed by Phase 4c's per-image LPIPS results. Brad runs SUPIR + HYPIR manually through suppixel.ai.
+
+**Scope note:** suppixel.ai's SUPIR and HYPIR support upscaling at 1×/2×/3×/4× only — no 5× or 10× capability. This matches the broader landscape (Real-ESRGAN, x4-upscaler are also 4× native). Phase 4.6 is therefore the **4× head-to-head**; our 5× and 10× results are framed in Phase 7 as exploration beyond what current public diffusion-SR tools support, with no available SOTA reference at those ratios.
+
+- [x] `outputs/supir/subset.json` documents 12 selected images with a per-image rationale (clear win / clear loss / surprise / coverage).
+- [ ] **Brad has run** SUPIR + HYPIR through suppixel.ai: 12 images × 1 ratio (4×) × 2 models = **24 renders**. LR inputs are `data/test_images/{stem}_250.jpg` (the 4× variant: 250 → 1000). Outputs land in `outputs/supir/{stem}_4x.{jpg|png}` and `outputs/hypir/{stem}_4x.{jpg|png}`.
+- [ ] Credits / $ spent on suppixel.ai recorded for the cost log.
+- [ ] `outputs/eval/leaderboard_phase4_6.csv` merges the 24 SUPIR + HYPIR rows with the existing 4× rows from `leaderboard_phase3.csv` for those 12 images.
+- [ ] `notebooks/06_supir_head_to_head.ipynb` renders 12 side-by-side grids at 4× (HR / bicubic / Lanczos / Real-ESRGAN / our two-stage / SUPIR / HYPIR), one per image, with per-image commentary noting the SOTA gap.
+- [ ] Notebook ends with a markdown summary: where we're competitive at 4×, where the gap is largest, and the takeaway that going beyond 4× is research territory rather than a comparison gap.
 
 ### Phase 5 — Local Gradio app
 - [ ] `frontend/main.py` runs: `uv run python frontend/main.py` → Gradio at `localhost:7860`.

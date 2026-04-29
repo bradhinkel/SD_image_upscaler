@@ -1,13 +1,14 @@
 {
-  "_about": "Phase 4.6 head-to-head subset selection. 12 images, balanced across (a) clear wins for our pipeline, (b) clear losses, (c) surprises where stage-B refinement hurts vs stage A alone, (d) coverage across categories and challenge tags. Selection driven by outputs/eval/leaderboard_phase3.csv (lr_size=200, 5x ratio).",
+  "_about": "Phase 4.6 head-to-head subset selection. 12 images, balanced across (a) clear wins for our pipeline, (b) clear losses, (c) surprises where stage-B refinement hurts vs stage A alone, (d) coverage across categories and challenge tags. Selection driven by outputs/eval/leaderboard_phase3.csv at 5x; rendering happens at 4x only because suppixel.ai (SUPIR/HYPIR) caps at 4x — see _scope_note below.",
+  "_scope_note": "Suppixel.ai's SUPIR and HYPIR tools support upscaling at 1x/2x/3x/4x only. 5x and 10x are out of scope for the head-to-head — this matches the reality of public diffusion-SR tools (Real-ESRGAN, x4-upscaler, SUPIR are all 4x native). Phase 7 writeup frames 4x as the apples-to-apples comparison ratio, and our pipeline's 5x/10x results as beyond-SOTA exploration with no available reference model.",
   "selected_at": "2026-04-29",
-  "ratios_to_render": [4, 5, 10],
+  "ratios_to_render": [4],
   "models_to_compare": ["SUPIR", "HYPIR"],
-  "expected_render_count": "12 images x 3 ratios x 2 models = 72",
-  "lr_inputs_to_use": "data/test_images/{stem}_{250|200|100}.jpg (matching the 4x/5x/10x ratios)",
+  "expected_render_count": "12 images x 1 ratio x 2 models = 24",
+  "lr_inputs_to_use": "data/test_images/{stem}_250.jpg (the 4x-source LR variant; 250 -> 1000)",
   "output_layout": {
-    "supir": "outputs/supir/{stem}_{ratio}.{jpg|png} (e.g., outputs/supir/Dubai_fine-arch_5x.jpg)",
-    "hypir": "outputs/hypir/{stem}_{ratio}.{jpg|png}"
+    "supir": "outputs/supir/{stem}_4x.{jpg|png} (e.g., outputs/supir/Dubai_fine-arch_4x.jpg)",
+    "hypir": "outputs/hypir/{stem}_4x.{jpg|png}"
   },
   "subset": [
     {
