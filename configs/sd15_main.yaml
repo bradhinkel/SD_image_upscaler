@@ -1,0 +1,39 @@
+# Phase 4c — SD 1.5 LoRA on stable-diffusion-x4-upscaler.
+# Real run on RunPod RTX 5090 32 GB. Config informed by the rehearsal run
+# (configs/rehearsal.yaml) which validated the loop end-to-end at rank 8 /
+# batch 1 / 1000 steps in 6 min on the local 5070.
+#
+# Cost target: <$10 at $0.69/hr. Time target: <6 hrs (SDXL gate criterion).
+
+base_model: stabilityai/stable-diffusion-x4-upscaler
+
+# LoRA — rank 16 hits the project plan's "rank 16-32" range while keeping
+# trainable params and VRAM modest. alpha = rank is a common, well-behaved
+# default (lora_scale defaults to 1.0).
+lora_rank: 16
+lora_target_modules:
+  - to_q
+  - to_k
+  - to_v
+  - to_out.0
+
+# Training. Batch 4 fits comfortably in 32 GB at fp16 with VAE in fp32.
+# 8000 steps at ~0.6 s/step => ~80 min on the 5090.
+learning_rate: 1.0e-4
+weight_decay: 0.0
+batch_size: 4
+max_steps: 8000
+max_noise_level: 200  # x4-upscaler conditions on noise level 0..350 at inference
+
+# Logging / checkpointing. Save samples + checkpoints frequently early on so
+# we can spot blow-ups before they cost real $.
+sample_every: 500
+sample_inference_steps: 25
+checkpoint_every: 1000
+
+# Data + outputs (paths are relative to repo root; the pod will check them out
+# under /workspace/SD_image_upscaler).
+pairs_dir: data/pairs
+captions_path: data/captions.jsonl
+output_dir: outputs/runs/sd15_main
+num_workers: 4
