@@ -33,6 +33,7 @@ Images/
 !outputs/supir/
 outputs/supir/*
 !outputs/supir/subset.json
+!outputs/supir/captions.json
 
 # Large reference material kept locally, not in repo (e.g. SUPIR paper PDF)
 docs/*.pdf

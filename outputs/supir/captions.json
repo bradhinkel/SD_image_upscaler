@@ -1,0 +1,18 @@
+{
+  "_about": "BLIP-large captions for the 12 Phase 4.6 SUPIR/HYPIR head-to-head images. Generated for documentation + an optional side experiment comparing generic-prompt vs rich-caption on SUPIR. Our main head-to-head uses the generic prompt 'a high-resolution photograph, sharp detail, professional quality' to match Phase 2 / Phase 4c eval conditions.",
+  "model": "Salesforce/blip-image-captioning-large",
+  "captions": {
+    "Landscape_Grain.jpg": "there is a black and white photo of a plane flying over a forest",
+    "Street_Hindi_Text.jpg": "there are two people riding on a motorcycle down the street",
+    "Dubai_fine-arch.jpg": "araffled skyscrapers in a city with a blue sky",
+    "Yosemite_Falls.jpg": "there is a waterfall that is flowing down a mountain side",
+    "Cat_Eyes-hf-texture.jpg": "a close up of a cat ' s blue eye with a map in the background",
+    "Yosemite_Valley.jpg": "there is a view of a valley with a waterfall in the distance",
+    "Notre_Dame_Fine-Arch.jpg": "arafed image of a large building with statues on the front",
+    "Forest_hf-texture.jpg": "sunlight shining through the trees in a forest with moss",
+    "Landscape_Reflection.jpg": "arafed view of a waterfall in the distance with a grassy field below",
+    "landscape_night.jpg": "a view of a full moon over a forest with a few trees",
+    "Owl.jpg": "there is a owl that is flying over a field of grass",
+    "NewYork.jpg": "arafed view of a city at dusk with a lot of tall buildings"
+  }
+}
