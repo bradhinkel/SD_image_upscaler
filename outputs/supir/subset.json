@@ -1,0 +1,102 @@
+{
+  "_about": "Phase 4.6 head-to-head subset selection. 12 images, balanced across (a) clear wins for our pipeline, (b) clear losses, (c) surprises where stage-B refinement hurts vs stage A alone, (d) coverage across categories and challenge tags. Selection driven by outputs/eval/leaderboard_phase3.csv (lr_size=200, 5x ratio).",
+  "selected_at": "2026-04-29",
+  "ratios_to_render": [4, 5, 10],
+  "models_to_compare": ["SUPIR", "HYPIR"],
+  "expected_render_count": "12 images x 3 ratios x 2 models = 72",
+  "lr_inputs_to_use": "data/test_images/{stem}_{250|200|100}.jpg (matching the 4x/5x/10x ratios)",
+  "output_layout": {
+    "supir": "outputs/supir/{stem}_{ratio}.{jpg|png} (e.g., outputs/supir/Dubai_fine-arch_5x.jpg)",
+    "hypir": "outputs/hypir/{stem}_{ratio}.{jpg|png}"
+  },
+  "subset": [
+    {
+      "image": "Landscape_Grain.jpg",
+      "category": "hard",
+      "challenges": ["noise"],
+      "rationale": "clear_win",
+      "context": "Our two_stage at 5x beats Real-ESRGAN by 0.101 LPIPS - the LARGEST win in the test set. Diffusion's invented texture matches the original heavy grain better than Real-ESRGAN's denoising. SUPIR should also handle this well; HYPIR comparison interesting."
+    },
+    {
+      "image": "Street_Hindi_Text.jpg",
+      "category": "hard",
+      "challenges": ["text"],
+      "rationale": "clear_win",
+      "context": "Two_stage beats Real-ESRGAN by 0.047 LPIPS at 5x - the second of only two clear wins. Text legibility is a well-known SUPIR strength; this image is the head-to-head's flagship text case."
+    },
+    {
+      "image": "Dubai_fine-arch.jpg",
+      "category": "hard",
+      "challenges": ["fine_architecture"],
+      "rationale": "clear_loss",
+      "context": "Two_stage's WORST loss vs Real-ESRGAN at 5x (delta +0.320 LPIPS). Ornate Dubai facade with dense repeating geometry - Real-ESRGAN's GAN extracts the structure cleanly while diffusion hallucinates unstable texture. SUPIR is the SOTA reference for exactly this kind of image; expect a dramatic SUPIR win."
+    },
+    {
+      "image": "Yosemite_Falls.jpg",
+      "category": "traditional",
+      "subcategory": "landscape",
+      "challenges": [],
+      "rationale": "clear_loss",
+      "context": "Top-2 loss for two_stage (delta +0.268). Iconic Yosemite Falls landscape - clean bicubic LR has all the structure Real-ESRGAN needs, so diffusion's invented detail is net-negative. Useful as a 'flagship landscape where dedicated SR wins' image."
+    },
+    {
+      "image": "Cat_Eyes-hf-texture.jpg",
+      "category": "hard",
+      "challenges": ["hf_texture"],
+      "rationale": "surprise_stage_b_hurts",
+      "context": "Stage A (x4-upscaler alone) hits LPIPS 0.20; stage B refinement WORSENS this to 0.33 - a 0.13 regression from our own pipeline's earlier component. Eye-detail at extreme zoom is a classic SUPIR test case; comparison should be visually striking."
+    },
+    {
+      "image": "Yosemite_Valley.jpg",
+      "category": "traditional",
+      "subcategory": "landscape",
+      "challenges": [],
+      "rationale": "surprise_stage_b_hurts",
+      "context": "Stage A 0.258, two_stage 0.361, Real-ESRGAN 0.268. Stage B refinement adds invented foliage that hurts LPIPS. Landmark landscape, intermediate-difficulty case for SUPIR."
+    },
+    {
+      "image": "Notre_Dame_Fine-Arch.jpg",
+      "category": "hard",
+      "challenges": ["fine_architecture"],
+      "rationale": "coverage_fine_architecture",
+      "context": "Second fine_architecture case (with Dubai). Pre-fire Notre-Dame ornate facade. Worth seeing whether Dubai's outcome generalises to other ornate-architecture content or is content-specific."
+    },
+    {
+      "image": "Forest_hf-texture.jpg",
+      "category": "hard",
+      "challenges": ["hf_texture"],
+      "rationale": "coverage_hf_texture",
+      "context": "Pine canopy / foliage. SUPIR's reported strength is exactly this kind of high-frequency natural texture - canonical test case for how SUPIR handles micro-detail invention vs our pipeline's softer treatment."
+    },
+    {
+      "image": "Landscape_Reflection.jpg",
+      "category": "hard",
+      "challenges": ["reflection"],
+      "rationale": "coverage_reflection",
+      "context": "Water reflection - a category where two_stage loses heavily (delta +0.234 vs Real-ESRGAN). Symmetric structure (real + reflected) tests how each method handles consistent geometry."
+    },
+    {
+      "image": "landscape_night.jpg",
+      "category": "hard",
+      "challenges": ["night"],
+      "rationale": "coverage_night",
+      "context": "Night-sky landscape. Our stage-B LoRA actually IMPROVED night scenes (62.5% win rate per Phase 4c eval), so this is the one image where the LoRA flavour might matter. Comparison: SUPIR vs HYPIR vs our LoRA-augmented two_stage on night content."
+    },
+    {
+      "image": "Owl.jpg",
+      "category": "traditional",
+      "subcategory": "animals",
+      "challenges": [],
+      "rationale": "coverage_animals_surprise",
+      "context": "Owl portrait - feathers + eyes are an SR favorite. x4-upscaler alone hits LPIPS 0.18 (very good); two_stage regresses to 0.27. Real-ESRGAN at 0.22. Tight three-way race makes this a useful comparator vs SUPIR/HYPIR."
+    },
+    {
+      "image": "NewYork.jpg",
+      "category": "traditional",
+      "subcategory": "cityscape",
+      "challenges": [],
+      "rationale": "coverage_cityscape",
+      "context": "NYC daytime cityscape - mixed skyscraper structure + windows + sky. Coverage for the cityscape subcategory; NOT a fine_architecture-tagged image, so distinct from Dubai/Notre Dame."
+    }
+  ]
+}

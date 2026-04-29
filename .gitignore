@@ -26,10 +26,13 @@ notebooks/*.nbconvert.ipynb
 
 # Project artifacts (never commit)
 data/*
-outputs/
+outputs/*
 Images/
-# ...except small templates that need to ship in the repo
+# ...except small templates / manifests that need to ship in the repo
 !data/human_ranks.template.json
+!outputs/supir/
+outputs/supir/*
+!outputs/supir/subset.json
 
 # Large reference material kept locally, not in repo (e.g. SUPIR paper PDF)
 docs/*.pdf
