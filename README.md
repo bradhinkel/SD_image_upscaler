@@ -24,6 +24,7 @@ A **50-hour consumer-GPU exploration** using the same conceptual recipe as SUPIR
 - **One cloud GPU** (RunPod RTX 5090 32 GB at $0.69/hr) for the four LoRA training attempts. Total cloud spend: $3.40.
 - **One commercial-API account** (suppixel.ai $5/month) for the head-to-head SUPIR + HYPIR runs.
 - **2,600 source images** (DIV2K + filtered Unsplash Lite) → **~7,800 (LR_128, HR_512) training pairs**, vs SUPIR's ~86,000 LSDIR images.
+- **60-image frozen test set** sourced from [Pixabay](https://pixabay.com) under their Content License — curated to fit the project's subject domain (10 traditional landscape, 10 cityscape, 10 animals + 30 hard cases tagged across `text` / `fine_architecture` / `hf_texture` / `reflection` / `noise` / `night`). Test images were chosen to give the benchmark a deliberate spread across "easy" and "challenging" content for diffusion-SR.
 - **Captions via BLIP-large**, vs SUPIR's LLaVA — a deliberate scale-down that itself becomes a finding.
 
 The README is the project's narrative artifact. Every claim below is reproducible from the linked notebook or script in this repo.
@@ -246,4 +247,10 @@ What would actually close the SUPIR gap, at three tiers of ambition: see [`docs/
 
 ## License
 
-MIT for the code. LoRA weights at `bradhinkel/sd-image-upscaler-sd15-lora` inherit OpenRAIL from SD 1.5 base. Training data attribution: DIV2K (research-only license), Unsplash Lite (ML training permitted under the Lite Dataset terms).
+MIT for the code. LoRA weights at `bradhinkel/sd-image-upscaler-sd15-lora` inherit OpenRAIL from SD 1.5 base.
+
+### Data attribution
+
+- **Training data:** [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (research-only license) + [Unsplash Lite Dataset](https://github.com/unsplash/datasets) (ML training permitted under the Lite Dataset terms — see TERMS.md in the dataset distribution).
+- **Test set:** 60 photographs sourced from [Pixabay](https://pixabay.com) under the [Pixabay Content License](https://pixabay.com/service/license-summary/), which permits free use including for commercial and machine-learning purposes without attribution required. Curated by Brad Hinkel into the 30-traditional + 30-hard taxonomy used throughout the benchmark.
+- **Captions:** generated locally via `Salesforce/blip-image-captioning-large`.
