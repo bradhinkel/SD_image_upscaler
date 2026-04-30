@@ -63,7 +63,7 @@ Stage A handles the native 4× lift with a model purpose-built for it. Stage B w
 | Adapter type | LoRA on cross-attention (q/k/v/out_proj) | Zero-init additive (ZeroSFT) on ResBlock features |
 | Adapter scale at init | scale 1.0 (multiplicative from step 0) | exactly 0 (training ramps up) |
 | Caption model | BLIP-large | LLaVA |
-| Training images | ~2,600 sources → ~7,800 crop pairs | ~86,000 (LSDIR) |
+| Training images | ~2,600 sources → ~7,800 crop pairs | ~20M images |
 | Training compute | $3.40 (4 RunPod 5090 runs) | research-cluster scale |
 | Max upscale ratio | targets 4× / 5× / 10× | 4× native |
 
